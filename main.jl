@@ -41,11 +41,9 @@ for j in eachindex(spread)
         
         # get extinction order
         spp = Symbol.(extinction_order[!, i])
-    
-        # pre-defined extinction sequence
-        Ns = extinction(N, spp; protect = :none, mechanism = :secondary)
-    
-        rob = robustness_gradient(Ns; threshold = spread[j])
+        
+        rob = robustness_gradient(N, spp;
+                    threshold = spread[j])
     
         D = DataFrame(
             threshold = spread[j],

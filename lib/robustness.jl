@@ -2,22 +2,58 @@
     Calculates the robustness for a series of networks. That is the proportion of primary extinction that result in
     the user specified % of species going extinct. This threshold is specified by `threshold`
 """
-function robustness_gradient(Ns::Vector{T}; threshold::Int = 50) where {T<:SpeciesInteractionNetwork}
+function robustness_gradient(
+    N::SpeciesInteractionNetwork{<:Partiteness,<:Binary},
+    extinction_order::Vector{Symbol}; 
+    threshold::Int = 50)
 
-    # get initial richness
-    init_rich = richness(Ns[1])
+    initial_rich = richness(N)
+    percent_loss = initial_rich*(threshold/100)
 
-    # threshold richness
-    # threshold = X% of original size of network
-    thresh_rich = floor(Int, init_rich * threshold / 100)
+    # for recording the number of primary extinctions
+    num_prim = 1
 
-    # get first index in network series that is equal to or less than threshold richness
-    # this is effectively the number of primary extinctions since each element = 1 primary extinction
-    net_in = findfirst(x -> x <= thresh_rich, richness.(Ns))
+    global K = N
 
-    # we subtract 1 since 1st network in series is the OG network (no extinctions)
-    primary = net_in - 1
+    # keep removing species until richness drops below threshold
+    for (i, sp_primary) in enumerate(extinction_order)
+            # check if sp in network
+            if sp_primary ∈ SpeciesInteractionNetworks.species(K)
+                
+                # find predators of that sp
+                preds = collect(predecessors(K, sp_primary))
+
+                # find preys of the preds
+                spp_remove = Symbol[]
+                for j in eachindex(preds)
+                    # if the predator only has one prey (i.e. spp to remove then we remove as well)
+                    if length(successors(N, preds[j])) == 1
+                        push!(spp_remove, preds[j])
+                    end
+                end
+
+                # add primary and secondary extinction list together
+                push!(spp_remove, sp_primary)
+
+                # remove those species from the network
+                spp_keep = filter(sp -> sp ∉ spp_remove, SpeciesInteractionNetworks.species(K))
+            
+                # nth extinction
+                K = subgraph(K, spp_keep)
+
+                # update at global scale
+                global K
+
+                if richness(K) / initial_rich >= (threshold/100)
+                    # keep record of the number of primary extinctions
+                    num_prim += 1
+                    continue
+                else
+                    break
+                end
+            end
+        end
 
     # return prop of primary extinctions as total number of initial species
-    return primary/init_rich
+    return num_prim/initial_rich
 end
