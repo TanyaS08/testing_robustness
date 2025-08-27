@@ -42,7 +42,8 @@ for j in eachindex(spread)
         # get extinction order
         spp = Symbol.(extinction_order[!, i])
         
-        rob = robustness_gradient(N, spp;
+        rob = robustness_gradient(N; 
+                    extinction_order =spp,
                     threshold = spread[j])
     
         D = DataFrame(
@@ -61,3 +62,4 @@ CSV.write(
     "data/robustness_julia.csv",
     robustness_vals,
 )
+
