@@ -22,13 +22,27 @@ anti_join(results_r, results_julia) %>%
   group_by(threshold) %>%
   tally()
 
-rbind(results_r %>%
-        mutate(source = "R"),
-      results_julia %>%
-        mutate(source = "julia")) %>%
-  ggplot() +
-  geom_smooth(aes(x = threshold,
-                  y = robustness,
-                  colour = source))
+df_combined <- 
+  rbind(results_r %>%
+          mutate(source = "R"),
+        results_julia %>%
+          mutate(source = "julia"))
+
+
+ggplot(df_combined %>%
+         group_by(source, threshold, rep) %>%
+         summarise(robustness = mean(robustness))) +
+  geom_abline(intercept = 100,
+              slope = -1,
+              colour = "grey85") +
+  #geom_line(aes(x = threshold,
+  #              y = robustness,
+  #              colour = source)) +
+  geom_smooth(data = df_combined,
+              aes(x = threshold,
+                  y = robustness*100,
+                  colour = source),
+              se = FALSE) +
+  ylim(0,100)
 
 
