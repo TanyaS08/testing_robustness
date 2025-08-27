@@ -3,8 +3,8 @@
     the user specified % of species going extinct. This threshold is specified by `threshold`
 """
 function robustness_gradient(
-    N::SpeciesInteractionNetwork{<:Partiteness,<:Binary},
-    extinction_order::Vector{Symbol}; 
+    N::SpeciesInteractionNetwork{<:Partiteness,<:Binary};
+    extinction_order::Union{Nothing,Vector{Symbol}} = nothing, 
     threshold::Int = 50)
 
     initial_rich = richness(N)
@@ -14,6 +14,10 @@ function robustness_gradient(
     num_prim = 1
 
     global K = N
+
+    if extinction_order == nothing
+        extinction_order = StatsBase.shuffle(species(K))
+    end
 
     # keep removing species until richness drops below threshold
     for (i, sp_primary) in enumerate(extinction_order)
@@ -26,7 +30,7 @@ function robustness_gradient(
                 # find preys of the preds
                 spp_remove = Symbol[]
                 for j in eachindex(preds)
-                    # if the predator only has one prey (i.e. spp to remove then we remove as well)
+                    # if the predator only has one prey (i.e. spp to remove then we add to list)
                     if length(successors(N, preds[j])) == 1
                         push!(spp_remove, preds[j])
                     end
