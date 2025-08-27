@@ -43,7 +43,7 @@ for j in eachindex(spread)
         spp = Symbol.(extinction_order[!, i])
         
         rob = robustness_gradient(N; 
-                    extinction_order =spp,
+                    extinction_order = spp,
                     threshold = spread[j])
     
         D = DataFrame(
